@@ -120,11 +120,13 @@ class Skeleton{
             // Create a motor between left arm and center body
             // -----------------------------------------------------
             left_motor = chrono_types::make_shared<ChLinkMotorRotationAngle>();
-            left_motor->Initialize(left_arm, center_body, ChFrame<>(left_motor_pos + m_skeleton_center, Q_from_AngAxis(-CH_C_PI_2, VECT_X)));
+            // left_motor->Initialize(left_arm, center_body, ChFrame<>(left_motor_pos + m_skeleton_center, Q_from_AngAxis(-CH_C_PI_2, VECT_X)));
+
+            left_motor->Initialize(left_arm, center_body, ChFrame<>(left_motor_pos + m_skeleton_center, Q_from_AngAxis(CH_C_PI_2, VECT_X)));
 
             // compute initial phase angle
             double amplitude = CH_C_PI_2;
-            double freq = 2 * CH_C_PI * 20;
+            double freq = 2 * CH_C_PI * 0.625;
             double offset_left = CH_C_PI - m_left_angle;
             double phase_angle = -std::asin(offset_left/amplitude);
 
@@ -162,7 +164,7 @@ class Skeleton{
             right_motor->Initialize(right_arm, center_body, ChFrame<>(right_motor_pos + m_skeleton_center, Q_from_AngAxis(-CH_C_PI_2, VECT_X)));
 
             // compute initial phase angle
-            freq = 2 * CH_C_PI * 25;
+            freq = 2 * CH_C_PI * 0.625;
             double offset_right = - m_right_angle;
             phase_angle = -std::asin(offset_right/amplitude);
 
