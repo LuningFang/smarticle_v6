@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
 
     // Skeleton skeleton1(ChVector<double>(0.0309, 0.0f, 0.009),  5.3186 - (EIGEN_PI), CH_C_PI_2, CH_C_PI_2, 11);
 
-    Skeleton skeleton1(ChVector<double>(0, 0.0f, 0), 0, -CH_C_PI_2, 0, 11);
+    Skeleton skeleton1(ChVector<double>(-0.0265, 0.0f, -0.0318), 5., -CH_C_PI_2, -CH_C_PI_2, 11);
 
     skeleton1.Initialize();
     skeleton1.AddSkeleton(sys);
@@ -163,15 +163,14 @@ int main(int argc, char* argv[]) {
         sys.DoStepDynamics(step_size);
 
 
-        if (frame % 10 == 0){
-            std::cout << sys.GetChTime() << std::endl;
+        if (frame % 100 == 0){
+            std::cout << sys.GetChTime() << "," ;
             char filename[300];
             sprintf(filename, "screenshot_%04d.png", int(frame/100));
             // std::string filename = "screenshot_" + std::to_string(int(frame/100)) + ".png";
             vis->WriteImageToFile(filename);
 
-            std::cout << "left arm position: " << skeleton1.GetLeftArmPos().x() << ", " << skeleton1.GetLeftArmPos().y() << ", " << skeleton1.GetLeftArmPos().z() << ", " << std::endl;
-
+            std::cout << skeleton1.GetLeftMotor()->GetMotorRot() << ", " << skeleton1.GetLeftMotor()->GetMotorTorque() << std::endl;
         }
 
         frame++;
