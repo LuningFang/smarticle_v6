@@ -104,29 +104,17 @@ int main(int argc, char* argv[]) {
     // force uppser limit (0, 3.0e-2)
     // force lower limit (0, -3.0e-2)
     // position limit enforced
-    // point limit: angle: (0, 1.5708 to 0, -1.5708)
-
-    // arm friction 0.37 w/ ground? 
-
-    ChVector<double> skeleton_center(0.0f, 0.0f, 0.0f);
-    double left_angle_initial = CH_C_PI;
-    double right_angle_initial = 0.0f;
-    // double right_angle_initial = 0;
- 
+    // point limit: angle: (0, 1.5708 to 0, -1.5708) 
 
  
-    // AddSkeleton(sys, skeleton_center, CH_C_PI_4, left_angle_initial, right_angle_initial, 10);
-
-    // Skeleton skeleton1(ChVector<double>(0.0309, 0.0f, -3.6426e-4), 0, 3.f * CH_C_PI/2.0f, -CH_C_PI/2.0f, 11);
-
-    // Skeleton skeleton1(ChVector<double>(0.0309, 0.0f, -3.6426e-4),  5.3186 - (EIGEN_PI), 1.5720, 1.57690, 11);
-
-    // Skeleton skeleton1(ChVector<double>(0.0309, 0.0f, 0.009),  5.3186 - (EIGEN_PI), CH_C_PI_2, CH_C_PI_2, 11);
-
-    Skeleton skeleton1(ChVector<double>(0, 0.0f, 0), 0, -CH_C_PI_2, 0, 11);
-
+    Skeleton skeleton1(ChVector<double>(0.0f, 0.0f, 0.0f), 0, -CH_C_PI_2, -CH_C_PI_2, 11);
     skeleton1.Initialize();
     skeleton1.AddSkeleton(sys);
+
+
+    Skeleton skeleton2(ChVector<double>(-0.108, 0.0f, 0), 0, -CH_C_PI_2, -CH_C_PI_2, 11);
+    skeleton2.Initialize();
+    skeleton2.AddSkeleton(sys);
 
 
     // Skeleton skeleton2(ChVector<double>(0.05, 0.f, -0.06), 0, 3.f * CH_C_PI/2.0f, -CH_C_PI/2.0f, 11);
@@ -141,42 +129,51 @@ int main(int argc, char* argv[]) {
     // ChVectorDynamic<double> initPose1(6);
     // initPose1 << 0.0309, -3.6426e-4, 5.3186 - (EIGEN_PI), 1.5720, 1.57690;
 
+
     // Create the Irrlicht visualization system
+/*
     auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
     vis->AttachSystem(&sys);
     vis->SetWindowSize(800, 600);
-    vis->SetWindowTitle("NSC collision demo");
+    vis->SetWindowTitle("smarticle test");
     vis->Initialize();
     vis->AddLogo();
     vis->AddSkyBox();
     vis->AddCamera(ChVector<>(0, 0.5, 0));
     vis->AddTypicalLights();
-
+*/
     int frame = 0;
 
-    while (vis->Run()) {
+    // while (vis->Run()) {
+   while (true){
+        /*
         vis->BeginScene();
         vis->Render();
         vis->ShowInfoPanel(true);
         vis->EndScene();
-
+        */
         sys.DoStepDynamics(step_size);
 
 
-        if (frame % 10 == 0){
-            std::cout << sys.GetChTime() << std::endl;
+        if (frame % 100 == 0){
             char filename[300];
             sprintf(filename, "screenshot_%04d.png", int(frame/100));
-            // std::string filename = "screenshot_" + std::to_string(int(frame/100)) + ".png";
-            vis->WriteImageToFile(filename);
+            // vis->WriteImageToFile(filename);
 
-            std::cout << "left arm position: " << skeleton1.GetLeftArmPos().x() << ", " << skeleton1.GetLeftArmPos().y() << ", " << skeleton1.GetLeftArmPos().z() << ", " << std::endl;
+        }
+
+        // std::cout << sys.GetChTime() << "," << skeleton1.GetPos().x() << ", " << skeleton1.GetPos().z() << std::endl;
+
+        if (frame % 20 == 0){
+            std::cout << sys.GetChTime() << "," << skeleton1.GetPos().x() << ", " << skeleton1.GetPos().y() << ", " << skeleton1.GetPos().z() << ", " << skeleton1.GetAlpha1() << ", " << skeleton1.GetAlpha2() << ", " << skeleton2.GetPos().x() << ", " << skeleton2.GetPos().y() << ", "  << skeleton2.GetPos().z() << ", " << skeleton2.GetAlpha1() << ", " << skeleton2.GetAlpha2() << std::endl;
 
         }
 
         frame++;
 
-        if (sys.GetChTime()>10){
+
+
+        if (sys.GetChTime()>180){
             break;
         }
 
