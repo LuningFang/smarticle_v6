@@ -62,8 +62,7 @@ project(smarticle)
 
 LIST(APPEND CMAKE_PREFIX_PATH "${CMAKE_INSTALL_PREFIX}/../Chrono/lib")
 find_package(Chrono
-		             COMPONENTS Irrlicht
-		#         COMPONENTS Vehicle
+             COMPONENTS Irrlicht
              CONFIG)
 
 #--------------------------------------------------------------
@@ -118,6 +117,8 @@ if(MSVC)
     add_definitions( "-DNOMINMAX" )                # do not use MSVC's min/max macros
     add_compile_options(/wd4275)                   # disable warnings triggered by Irrlicht
     add_compile_options(/wd4251)                   # class needs to have dll-interface
+else()
+    set(EXTRA_COMPILE_FLAGS "")
 endif()
 
 #--------------------------------------------------------------
@@ -126,9 +127,7 @@ endif()
 # files in your project. 
 #--------------------------------------------------------------
 
-# add_executable(my_demo my_example.cpp)
 add_executable(main main.cpp)
-add_executable(test test.cpp)
 
 #--------------------------------------------------------------
 # Set properties for your executable target
@@ -139,19 +138,15 @@ add_executable(test test.cpp)
 # install tree (if using an installed version of Chrono).
 #--------------------------------------------------------------
 
-target_compile_definitions(main PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
-target_compile_options(main PUBLIC ${CHRONO_CXX_FLAGS})
-target_link_options(main PUBLIC ${CHRONO_LINKER_FLAGS})
-
-target_compile_definitions(test PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
-target_compile_options(test PUBLIC ${CHRONO_CXX_FLAGS})
-target_link_options(test PUBLIC ${CHRONO_LINKER_FLAGS})
-
+set_target_properties(main PROPERTIES 
+	    COMPILE_FLAGS "${CHRONO_CXX_FLAGS} ${EXTRA_COMPILE_FLAGS}"
+	    COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
+	    LINK_FLAGS "${CHRONO_LINKER_FLAGS}")
 
 #--------------------------------------------------------------
 # Link to Chrono libraries and dependency libraries
 #--------------------------------------------------------------
-target_link_libraries(test ${CHRONO_LIBRARIES})
+
 target_link_libraries(main ${CHRONO_LIBRARIES})
 
 #--------------------------------------------------------------

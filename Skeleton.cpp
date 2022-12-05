@@ -1,5 +1,4 @@
 #include "chrono/physics/ChSystemNSC.h"
-#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 #include "chrono/physics/ChBodyEasy.h"
 #include "chrono/physics/ChLinkMotorRotationAngle.h"
 #include "chrono/physics/ChLinkMotorRotationSpeed.h"
@@ -100,8 +99,6 @@ class Skeleton{
 
             auto link_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
             link_mat->SetFriction(0.37);
-            auto link_mat_vis = chrono_types::make_shared<ChVisualMaterial>(*ChVisualMaterial::Default());
-
 
             ChVector<double>  left_motor_pos(-belly_size.x()/2 * std::cos(m_belly_rotation), 0,  belly_size.x()/2 * std::sin(m_belly_rotation));
             ChVector<double> right_motor_pos( belly_size.x()/2 * std::cos(m_belly_rotation), 0, -belly_size.x()/2 * std::sin(m_belly_rotation));
@@ -134,6 +131,10 @@ class Skeleton{
             left_arm->SetBodyFixed(false);
             left_arm->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(no_contact_family_id);
 
+            auto texture = chrono_types::make_shared<ChTexture>();
+            texture->SetTextureFilename(GetChronoDataFile("textures/bluewhite.png"));
+            left_arm->AddAsset(texture);
+
 
             // -----------------------------------------------------
             // center belly
@@ -155,7 +156,7 @@ class Skeleton{
             center_body->SetBodyFixed(false);
             center_body->SetMass(mass_large);
             center_body->GetCollisionModel()->SetFamily(no_contact_family_id);
-
+            center_body->AddAsset(texture);
 
 
             // -----------------------------------------------------
@@ -190,6 +191,9 @@ class Skeleton{
             right_arm->SetBodyFixed(false);  // the truss does not move!
             right_arm->SetMass(mass_small);
             right_arm->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(no_contact_family_id);
+            right_arm->AddAsset(texture);
+
+
 
             // -----------------------------------------------------
             // Create a motor between right arm and center body

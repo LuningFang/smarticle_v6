@@ -22,10 +22,9 @@
 #include "chrono/core/ChRealtimeStep.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 #include "chrono/physics/ChSystemNSC.h"
-#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 #include "chrono/physics/ChBodyEasy.h"
 #include "chrono/physics/ChLinkMotorRotationAngle.h"
-
+#include "chrono_irrlicht/ChIrrApp.h"
 
 
 #include "chrono/utils/ChUtilsInputOutput.h"
@@ -36,11 +35,13 @@
 using namespace chrono;
 using namespace chrono::irrlicht;
 
+using namespace irr;
+using namespace irr::core;
+
 collision::ChCollisionSystemType collision_type = collision::ChCollisionSystemType::BULLET;
 
 void AddContainerWall(std::shared_ptr<ChBody> body,
                       std::shared_ptr<ChMaterialSurface> mat,
-                      std::shared_ptr<ChVisualMaterial> vis_mat,
                       const ChVector<>& size,
                       const ChVector<>& pos,
                       bool visible = true) {
@@ -51,8 +52,8 @@ void AddContainerWall(std::shared_ptr<ChBody> body,
     if (visible) {
         auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().Size = hsize;
-        box->SetMaterial(0, vis_mat);
-        body->AddVisualShape(box, ChFrame<>(pos, QUNIT));
+        body->AddAsset(box);
+        // body->AddVisualShape(box, ChFrame<>(pos, QUNIT));
     }
 }
 
@@ -67,21 +68,23 @@ void AddContainer(ChSystemNSC& sys) {
 
     // Contact material for container
     auto fixed_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
-    auto fixed_mat_vis = chrono_types::make_shared<ChVisualMaterial>(*ChVisualMaterial::Default());
-    fixed_mat_vis->SetKdTexture(GetChronoDataFile("textures/concrete.jpg"));
-
     fixedBody->GetCollisionModel()->ClearModel();
     // ground
-    AddContainerWall(fixedBody, fixed_mat, fixed_mat_vis, ChVector<>(5.0, 0.02, 5.0), ChVector<>(0, -0.025, 0));
+    AddContainerWall(fixedBody, fixed_mat, ChVector<>(5.0, 0.02, 5.0), ChVector<>(0, -0.025, 0), false);
     // lwall
-    AddContainerWall(fixedBody, fixed_mat, fixed_mat_vis, ChVector<>(0.02, 5.0, 5.0), ChVector<>(-5.0, 2.0, 0.0));
+    AddContainerWall(fixedBody, fixed_mat, ChVector<>(0.02, 5.0, 5.0), ChVector<>(-5.0, 2.0, 0.0), false);
     // rwall
-    AddContainerWall(fixedBody, fixed_mat, fixed_mat_vis, ChVector<>(0.02, 5.0, 5.0), ChVector<>(5.0, 2.0, 0.0));
+    AddContainerWall(fixedBody, fixed_mat, ChVector<>(0.02, 5.0, 5.0), ChVector<>(5.0, 2.0, 0.0), false);
 
-    AddContainerWall(fixedBody, fixed_mat, fixed_mat_vis, ChVector<>(5.0, 5.0, 0.02), ChVector<>(0, 2.0, -5.0), false);
+    AddContainerWall(fixedBody, fixed_mat, ChVector<>(5.0, 5.0, 0.02), ChVector<>(0, 2.0, -5.0), false);
 
-    AddContainerWall(fixedBody, fixed_mat, fixed_mat_vis, ChVector<>(5.0, 5.0, 0.02), ChVector<>(0, 2, 5.0));
+    AddContainerWall(fixedBody, fixed_mat, ChVector<>(5.0, 5.0, 0.02), ChVector<>(0, 2, 5.0), false);
     fixedBody->GetCollisionModel()->BuildModel();
+
+
+    auto texture = chrono_types::make_shared<ChTexture>();
+    texture->SetTextureFilename(GetChronoDataFile("textures/concrete.jpg"));
+    fixedBody->AddAsset(texture);
 
     sys.AddBody(fixedBody);
 
@@ -110,7 +113,7 @@ int main(int argc, char* argv[]) {
     // theta, oritentation of the belly
     // alpha1 and alpha2
     // body id, make sure it's different for every body
-    Skeleton skeleton1(ChVector<double>(-0.02f, 0.0f, -0.006f), 0, 3.f * CH_C_PI/2.0f, -CH_C_PI_2, 11);
+    Skeleton skeleton1(ChVector<double>(-0.02f, 0.0f, -0.006f), CH_C_PI_4, 3.f * CH_C_PI/2.0f, -CH_C_PI_2, 11);
 
     // 
     skeleton1.Initialize();
@@ -138,46 +141,50 @@ int main(int argc, char* argv[]) {
 
 
     // Create the Irrlicht visualization system
-    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
-    vis->AttachSystem(&sys);
-    vis->SetWindowSize(800, 600);
-    vis->SetWindowTitle("smarticle test");
-    vis->Initialize();
-    vis->AddLogo();
-    vis->AddSkyBox();
-    vis->AddCamera(ChVector<>(0, 0.5, 0));
-    vis->AddTypicalLights();
+    ChIrrApp application(&sys, L"smarticle demo", core::dimension2d<u32>(800, 600));
+    // Add camera, lights, logo and sky in Irrlicht scene
+    application.AddTypicalLogo();
+    application.AddTypicalSky();
+    application.AddTypicalLights();
+    application.AddTypicalCamera(core::vector3df(0, 0.4, 0));
+
+
+
+    // Complete asset specification: convert all assets to Irrlicht
+    application.AssetBindAll();
+    application.AssetUpdateAll();
 
     int frame = 0;
 
+
     // while (vis->Run()) {
-   while (true){
+    while (true){
         // visualization
-        vis->BeginScene();
-        vis->Render();
-        vis->ShowInfoPanel(true);
-        vis->EndScene();
         // compute dynamics
         sys.DoStepDynamics(step_size);
 
 
-        if (frame % 100 == 0){
-            char filename[300];
-            sprintf(filename, "screenshot_%04d.png", int(frame/100));
-            // write a screenshot to directory
-            vis->WriteImageToFile(filename);
+        // if (frame % 100 == 0){
+        //     char filename[300];
+        //     sprintf(filename, "screenshot_%04d.png", int(frame/100));
+        //     // write a screenshot to directory
 
-        }
+        // }
 
-        if (frame % 200 == 0){
+        if (frame % 20 == 0){
+
+            application.BeginScene();
+            application.DrawAll();
+            application.EndScene();
+
             // std::cout << sys.GetChTime() << "," << skeleton1.GetPos().x() << ", " << skeleton1.GetPos().y() << ", " << skeleton1.GetPos().z() << ", " << skeleton1.GetAlpha1() << ", " << skeleton1.GetAlpha2() << ", " << skeleton2.GetPos().x() << ", " << skeleton2.GetPos().y() << ", "  << skeleton2.GetPos().z() << ", " << skeleton2.GetAlpha1() << ", " << skeleton2.GetAlpha2() << std::endl;
 
-            std::cout << sys.GetChTime() << ","  << skeleton1.GetPos().x() << ", " << skeleton1.GetPos().y() << ", "  << skeleton1.GetPos().z() << ", " << skeleton1.GetAlpha1() << ", " << skeleton1.GetAlpha2() << ",";
+            // std::cout << sys.GetChTime() << ","  << skeleton1.GetPos().x() << ", " << skeleton1.GetPos().y() << ", "  << skeleton1.GetPos().z() << ", " << skeleton1.GetAlpha1() << ", " << skeleton1.GetAlpha2() << ",";
 
 
             // std::cout  << skeleton2.GetPos().x() << ", " << skeleton2.GetPos().y() << ", "  << skeleton2.GetPos().z() << ", " << skeleton2.GetAlpha1() << ", " << skeleton2.GetAlpha2() << std::endl;
 
-            std::cout << std::endl;
+            // std::cout << std::endl;
 
 
         }
