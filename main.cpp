@@ -68,7 +68,6 @@ void AddContainer(ChSystemNSC& sys) {
     // Contact material for container
     auto fixed_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     auto fixed_mat_vis = chrono_types::make_shared<ChVisualMaterial>(*ChVisualMaterial::Default());
-    std::cout << "data path: " << GetChronoDataPath() << std::endl;
     fixed_mat_vis->SetKdTexture(GetChronoDataFile("textures/concrete.jpg"));
 
     fixedBody->GetCollisionModel()->ClearModel();
@@ -106,15 +105,23 @@ int main(int argc, char* argv[]) {
     // position limit enforced
     // point limit: angle: (0, 1.5708 to 0, -1.5708) 
 
- 
-    Skeleton skeleton1(ChVector<double>(0.0f, 0.0f, 0.0f), 0, -CH_C_PI_2, -CH_C_PI_2, 11);
+    // Parameters;
+    // location of the belly at -0.02, 0, -0.006
+    // theta, oritentation of the belly
+    // alpha1 and alpha2
+    // body id, make sure it's different for every body
+    Skeleton skeleton1(ChVector<double>(-0.02f, 0.0f, -0.006f), 0, 3.f * CH_C_PI/2.0f, -CH_C_PI_2, 11);
+
+    // 
     skeleton1.Initialize();
+    // Add body skeleton 1 to sys
     skeleton1.AddSkeleton(sys);
 
 
-    Skeleton skeleton2(ChVector<double>(-0.108, 0.0f, 0), 0, -CH_C_PI_2, -CH_C_PI_2, 11);
-    skeleton2.Initialize();
-    skeleton2.AddSkeleton(sys);
+    // Test one skeleton first ... then writes API that sets phase shift
+    // Skeleton skeleton2(ChVector<double>(0.02, 0.0f, 0.06f), CH_C_PI, 3.f * CH_C_PI/2.0f, -CH_C_PI_2, 12);
+    // skeleton2.Initialize();
+    // skeleton2.AddSkeleton(sys);
 
 
     // Skeleton skeleton2(ChVector<double>(0.05, 0.f, -0.06), 0, 3.f * CH_C_PI/2.0f, -CH_C_PI/2.0f, 11);
@@ -131,7 +138,6 @@ int main(int argc, char* argv[]) {
 
 
     // Create the Irrlicht visualization system
-/*
     auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
     vis->AttachSystem(&sys);
     vis->SetWindowSize(800, 600);
@@ -141,31 +147,38 @@ int main(int argc, char* argv[]) {
     vis->AddSkyBox();
     vis->AddCamera(ChVector<>(0, 0.5, 0));
     vis->AddTypicalLights();
-*/
+
     int frame = 0;
 
     // while (vis->Run()) {
    while (true){
-        /*
+        // visualization
         vis->BeginScene();
         vis->Render();
         vis->ShowInfoPanel(true);
         vis->EndScene();
-        */
+        // compute dynamics
         sys.DoStepDynamics(step_size);
 
 
         if (frame % 100 == 0){
             char filename[300];
             sprintf(filename, "screenshot_%04d.png", int(frame/100));
-            // vis->WriteImageToFile(filename);
+            // write a screenshot to directory
+            vis->WriteImageToFile(filename);
 
         }
 
-        // std::cout << sys.GetChTime() << "," << skeleton1.GetPos().x() << ", " << skeleton1.GetPos().z() << std::endl;
+        if (frame % 200 == 0){
+            // std::cout << sys.GetChTime() << "," << skeleton1.GetPos().x() << ", " << skeleton1.GetPos().y() << ", " << skeleton1.GetPos().z() << ", " << skeleton1.GetAlpha1() << ", " << skeleton1.GetAlpha2() << ", " << skeleton2.GetPos().x() << ", " << skeleton2.GetPos().y() << ", "  << skeleton2.GetPos().z() << ", " << skeleton2.GetAlpha1() << ", " << skeleton2.GetAlpha2() << std::endl;
 
-        if (frame % 20 == 0){
-            std::cout << sys.GetChTime() << "," << skeleton1.GetPos().x() << ", " << skeleton1.GetPos().y() << ", " << skeleton1.GetPos().z() << ", " << skeleton1.GetAlpha1() << ", " << skeleton1.GetAlpha2() << ", " << skeleton2.GetPos().x() << ", " << skeleton2.GetPos().y() << ", "  << skeleton2.GetPos().z() << ", " << skeleton2.GetAlpha1() << ", " << skeleton2.GetAlpha2() << std::endl;
+            std::cout << sys.GetChTime() << ","  << skeleton1.GetPos().x() << ", " << skeleton1.GetPos().y() << ", "  << skeleton1.GetPos().z() << ", " << skeleton1.GetAlpha1() << ", " << skeleton1.GetAlpha2() << ",";
+
+
+            // std::cout  << skeleton2.GetPos().x() << ", " << skeleton2.GetPos().y() << ", "  << skeleton2.GetPos().z() << ", " << skeleton2.GetAlpha1() << ", " << skeleton2.GetAlpha2() << std::endl;
+
+            std::cout << std::endl;
+
 
         }
 
@@ -173,7 +186,7 @@ int main(int argc, char* argv[]) {
 
 
 
-        if (sys.GetChTime()>180){
+        if (sys.GetChTime()>120){
             break;
         }
 

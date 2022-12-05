@@ -2,70 +2,82 @@
 #include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 #include "chrono/physics/ChBodyEasy.h"
 #include "chrono/physics/ChLinkMotorRotationAngle.h"
-
+#include "chrono/physics/ChLinkMotorRotationSpeed.h"
 
 
 #include "chrono/utils/ChUtilsInputOutput.h"
 #include "chrono_thirdparty/filesystem/path.h"
-
 #include <cmath>
 using namespace chrono;
 
-
-
-
-class ChFunction_MyTest : public ChFunction {
+// left motor function 
+class ChFunction_LeftMotor : public ChFunction {
     public:
-    ChFunction_MyTest() : m_amp(1), m_phase(0), m_omg(2 * CH_C_PI), m_offset(0) {}
+    ChFunction_LeftMotor() : m_speed(CH_C_1_PI/0.4f) {}
 
-    ChFunction_MyTest(double amp, double omg, double phase, double offset):
-    m_amp(amp), m_omg(omg), m_phase(phase), m_offset(offset) {}
+    ChFunction_LeftMotor(double speed): m_speed(speed){}
 
 
-    virtual ChFunction_MyTest* Clone() const override { return new ChFunction_MyTest(); }
+    virtual ChFunction_LeftMotor* Clone() const override { return new ChFunction_LeftMotor(); }
 
-    virtual double Get_y(double x) const override { return (m_amp * sin( m_omg*x + m_phase) + m_offset); }  // just for test: simple cosine
+    // define your own speed function ( x is time, Get_y return speed)
+    virtual double Get_y(double x) const override { 
 
-    virtual double Get_y_dx(double x) const override{ return m_omg * m_amp * cos(m_omg * x + m_phase);}
-    virtual double Get_y_dxdx(double x) const override{ return -m_amp * m_omg * m_omg * sin(m_omg * x + m_phase);}
+        int g = int((x+0.2f)/0.4f) % 4;
+        double velo;
+        switch (g) {
+            case 0:
+                return 0;
+            case 1:
+                return m_speed;
+            case 2:
+                return 0;
+            case 3:
+                return -m_speed;
+        }
+    }
+
 
     private:
-    double m_omg;
-    double m_phase;
-    double m_amp;
-    double m_offset;
-
+    double m_speed;
 };
 
-class myGaits : public ChFunction {
+class ChFunction_RightMotor : public ChFunction {
     public:
-    myGaits() : m_amp(CH_C_PI) {}
+    ChFunction_RightMotor() : m_speed(CH_C_1_PI/0.4f) {}
 
-    myGaits(double amp): m_amp(amp) {}
+    ChFunction_RightMotor(double speed): m_speed(speed){}
 
 
-    virtual myGaits* Clone() const override { return new myGaits(); }
+    virtual ChFunction_RightMotor* Clone() const override { return new ChFunction_RightMotor(); }
 
     virtual double Get_y(double x) const override { 
-        int period = std::ceil(x/0.8);
-        if( period % 2 == 1){
-            return 0;
-        } 
-        else return m_amp;}  // just for test: simple cosine
 
-    virtual double Get_y_dx(double x) const override{ return 0;}
-    virtual double Get_y_dxdx(double x) const override{ return 0;}
+        int g = int((x + 0.2f)/0.4f) % 4;
+        double velo;
+        switch (g) {
+            case 0:
+                return -m_speed;
+            case 1:
+                return 0;
+            case 2:
+                return m_speed;
+            case 3:
+                return 0;
+        }
+    }
+
 
     private:
-    double m_amp;
-
+    double m_speed;
 };
+
 
 class Skeleton{
     public:
         Skeleton(ChVector<double> skeleton_center,
                  double belly_rotation,
-                 double alpha1,  // see Akash paper
+                 double alpha1,  
                  double alpha2,  // see Akash paper for how alpha defined definition
                  int id){
 
@@ -82,14 +94,14 @@ class Skeleton{
 
             double mass_small = 0.003186;
             double mass_large = 0.0248;
+            ChVector<double> arm_size(0.05, 0.023, 0.003);
+            ChVector<double> belly_size(0.054, 0.027, 0.022);
+
 
             auto link_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
             link_mat->SetFriction(0.37);
             auto link_mat_vis = chrono_types::make_shared<ChVisualMaterial>(*ChVisualMaterial::Default());
 
-
-            ChVector<double> arm_size(0.05, 0.023, 0.003);
-            ChVector<double> belly_size(0.054, 0.027, 0.022);
 
             ChVector<double>  left_motor_pos(-belly_size.x()/2 * std::cos(m_belly_rotation), 0,  belly_size.x()/2 * std::sin(m_belly_rotation));
             ChVector<double> right_motor_pos( belly_size.x()/2 * std::cos(m_belly_rotation), 0, -belly_size.x()/2 * std::sin(m_belly_rotation));
@@ -98,6 +110,7 @@ class Skeleton{
 
             ChVector<double> arm1_pos(left_motor_pos.x() + arm_size.x()/2.0f * std::cos(m_left_angle + m_belly_rotation), 0, left_motor_pos.z() - arm_size.x()/2.0f * std::sin(m_left_angle + m_belly_rotation));
 
+            // rotate angle of theta+alpha_1 with respect to y axis
             ChQuaternion<double> arm1_rot(Q_from_AngAxis(m_left_angle + m_belly_rotation, VECT_Y));
 
 
@@ -105,8 +118,9 @@ class Skeleton{
                             chrono_types::make_shared<collision::ChCollisionModelBullet>();
 
 
-
+            // -----------------------------------------------------
             // left arm
+            // -----------------------------------------------------
             left_arm = chrono_types::make_shared<ChBodyEasyBox>(arm_size.x(), 
                                                                 arm_size.y(), 
                                                                 arm_size.z(),  // x,y,z size
@@ -121,8 +135,10 @@ class Skeleton{
             left_arm->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(no_contact_family_id);
 
 
+            // -----------------------------------------------------
+            // center belly
+            // -----------------------------------------------------
             ChQuaternion<double> center_body_rotation = Q_from_AngAxis(m_belly_rotation, VECT_Y);
-
             std::shared_ptr<collision::ChCollisionModel> collision_model2 =
                             chrono_types::make_shared<collision::ChCollisionModelBullet>();
 
@@ -136,7 +152,7 @@ class Skeleton{
                                                                   collision_model2);     // collision?
             center_body->SetPos(m_skeleton_center);
             center_body->SetRot(center_body_rotation);
-            center_body->SetBodyFixed(false);  // the truss does not move!
+            center_body->SetBodyFixed(false);
             center_body->SetMass(mass_large);
             center_body->GetCollisionModel()->SetFamily(no_contact_family_id);
 
@@ -145,35 +161,11 @@ class Skeleton{
             // -----------------------------------------------------
             // Create a motor between left arm and center body
             // -----------------------------------------------------
-            left_motor = chrono_types::make_shared<ChLinkMotorRotationAngle>();
-            // left_motor->Initialize(left_arm, center_body, ChFrame<>(left_motor_pos + m_skeleton_center, Q_from_AngAxis(-CH_C_PI_2, VECT_X)));
-
+            left_motor = chrono_types::make_shared<ChLinkMotorRotationSpeed>();
             left_motor->Initialize(left_arm, center_body, ChFrame<>(left_motor_pos + m_skeleton_center, Q_from_AngAxis(CH_C_PI_2, VECT_X)));
-
-            // compute initial phase angle
-            double amplitude = CH_C_PI_2;
-            double freq = 2 * CH_C_PI * 0.625;
-            double offset_left = CH_C_PI - m_left_angle;
-            double phase_angle = -std::asin(offset_left/amplitude);
-
-            auto my_functsequence = chrono_types::make_shared<ChFunction_Sequence>();
-            auto my_funcpause1 = chrono_types::make_shared<ChFunction_Const>(0);
-            auto my_funcsigma1 = chrono_types::make_shared<ChFunction_Sigma>(CH_C_PI, 0, 0.2);  // diplacement, t_start, t_end
-            auto my_funcsigma2 = chrono_types::make_shared<ChFunction_Sigma>(-CH_C_PI, 0, 0.2);  // diplacement, t_start, t_end
-            auto my_funcpause2 = chrono_types::make_shared<ChFunction_Const>(0);
-
-
-            auto my_funcpause3 = chrono_types::make_shared<ChFunction_Const>(m_left_angle - CH_C_PI_2);
-
-            std::cout << "set angle left: " << m_left_angle - CH_C_PI_2 << std::endl;
-            my_functsequence->InsertFunct(my_funcpause1, 0.6, 1.0, true);  // fx, duration, weight, enforce C0 continuity
-            my_functsequence->InsertFunct(my_funcsigma1, 0.2, 1.0, true);  // fx, duration, weight, enforce C0 continuity
-            my_functsequence->InsertFunct(my_funcpause2, 0.6, 1.0, true);  // fx, duration, weight, enforce C0 continuity
-            my_functsequence->InsertFunct(my_funcsigma2, 0.2, 1.0, true);  // fx, duration, weight, enforce C0 continuity
-            auto my_functangle = chrono_types::make_shared<ChFunction_Repeat>();
-            my_functangle->Set_fa(my_functsequence);
-            my_functangle->Set_window_length(1.6);
-            left_motor->SetAngleFunction(my_functangle);
+            // initialize motor velocity function, speed of pi/4
+            auto left_motor_velo_func = chrono_types::make_shared<ChFunction_LeftMotor>(CH_C_PI/0.4f);
+            left_motor->SetSpeedFunction(left_motor_velo_func);
 
 
             ChVector<double> arm2_pos(right_motor_pos.x() + arm_size.x()/2.0f * std::cos(m_right_angle + m_belly_rotation), 0, right_motor_pos.z() - arm_size.x()/2.0f * std::sin(m_right_angle + m_belly_rotation));
@@ -182,6 +174,9 @@ class Skeleton{
             std::shared_ptr<collision::ChCollisionModel> collision_model3 =
                             chrono_types::make_shared<collision::ChCollisionModelBullet>();
 
+            // -----------------------------------------------------
+            // right arm
+            // -----------------------------------------------------
             right_arm = chrono_types::make_shared<ChBodyEasyBox>(arm_size.x(), 
                                                                 arm_size.y(), 
                                                                 arm_size.z(),  // x,y,z size
@@ -199,43 +194,40 @@ class Skeleton{
             // -----------------------------------------------------
             // Create a motor between right arm and center body
             // -----------------------------------------------------
-            right_motor = chrono_types::make_shared<ChLinkMotorRotationAngle>();
-            // -90 degree w.r.t. global x, rotation axis, z, pointing in y direction, opposite of gravity
+            right_motor = chrono_types::make_shared<ChLinkMotorRotationSpeed>();
             right_motor->Initialize(right_arm, center_body, ChFrame<>(right_motor_pos + m_skeleton_center, Q_from_AngAxis(-CH_C_PI_2, VECT_X)));
 
-            auto right_functsequence = chrono_types::make_shared<ChFunction_Sequence>();
-            right_functsequence->InsertFunct(my_funcpause1, 0.4, 1.0, true);  // fx, duration, weight, enforce C0 continuity
-            right_functsequence->InsertFunct(my_funcsigma1, 0.2, 1.0, true);  // fx, duration, weight, enforce C0 continuity
-            right_functsequence->InsertFunct(my_funcpause2, 0.4, 1.0, true);  // fx, duration, weight, enforce C0 continuity
-            right_functsequence->InsertFunct(my_funcsigma2, 0.2, 1.0, true);  // fx, duration, weight, enforce C0 continuity
-            right_functsequence->InsertFunct(my_funcpause1, 0.4, 1.0, true);  // fx, duration, weight, enforce C0 continuity
-
-            auto right_func_angle = chrono_types::make_shared<ChFunction_Repeat>();
-            right_func_angle->Set_fa(right_functsequence);
-            right_func_angle->Set_window_length(1.6);
-
-
-            right_motor->SetAngleFunction(right_func_angle);
+            auto right_motor_velo_func = chrono_types::make_shared<ChFunction_RightMotor>(CH_C_PI/0.4f);
+            right_motor->SetSpeedFunction(right_motor_velo_func);
 
         };
 
         void AddSkeleton(ChSystemNSC& sys){
             sys.AddBody(left_arm);
             sys.AddBody(center_body);
-            sys.Add(right_arm);
+            sys.AddBody(right_arm);
 
             sys.AddLink(left_motor);            
-            sys.AddLink(right_motor);
+            // sys.AddLink(right_motor);
 
         }
     
-        ChVector<double> GetLeftArmPos(){
-            return left_arm->GetPos();
+        ChVector<double> GetPos(){
+            return center_body->GetPos();
         };
 
-        std::shared_ptr<ChLinkMotorRotationAngle> GetRightMotor(){return right_motor;};
+        std::shared_ptr<ChLinkMotorRotationSpeed> GetRightMotor(){return right_motor;};
 
-        std::shared_ptr<ChLinkMotorRotationAngle> GetLeftMotor(){return left_motor;};
+        std::shared_ptr<ChLinkMotorRotationSpeed> GetLeftMotor(){return left_motor;};
+
+        // return alpha1 angle 
+        double GetAlpha1() {return left_motor->GetMotorRot();};
+
+        // return alpha2 angle 
+        double GetAlpha2() {return right_motor->GetMotorRot();};
+
+        // return theta
+
 
     private:
         ChVector<double> m_skeleton_center;
@@ -246,8 +238,8 @@ class Skeleton{
         std::shared_ptr<ChBodyEasyBox> left_arm;
         std::shared_ptr<ChBodyEasyBox> center_body;
         std::shared_ptr<ChBodyEasyBox> right_arm;
-        std::shared_ptr<ChLinkMotorRotationAngle> left_motor;
-        std::shared_ptr<ChLinkMotorRotationAngle> right_motor;
+        std::shared_ptr<ChLinkMotorRotationSpeed> left_motor;
+        std::shared_ptr<ChLinkMotorRotationSpeed> right_motor;
 
 };
 

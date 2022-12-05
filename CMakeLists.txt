@@ -128,6 +128,7 @@ endif()
 
 # add_executable(my_demo my_example.cpp)
 add_executable(main main.cpp)
+add_executable(test test.cpp)
 
 #--------------------------------------------------------------
 # Set properties for your executable target
@@ -142,10 +143,15 @@ target_compile_definitions(main PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"")
 target_compile_options(main PUBLIC ${CHRONO_CXX_FLAGS})
 target_link_options(main PUBLIC ${CHRONO_LINKER_FLAGS})
 
+target_compile_definitions(test PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
+target_compile_options(test PUBLIC ${CHRONO_CXX_FLAGS})
+target_link_options(test PUBLIC ${CHRONO_LINKER_FLAGS})
+
 
 #--------------------------------------------------------------
 # Link to Chrono libraries and dependency libraries
 #--------------------------------------------------------------
+target_link_libraries(test ${CHRONO_LIBRARIES})
 target_link_libraries(main ${CHRONO_LIBRARIES})
 
 #--------------------------------------------------------------

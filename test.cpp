@@ -131,7 +131,7 @@ int main(int argc, char* argv[]) {
 
 
     // Create the Irrlicht visualization system
-/*
+
     auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
     vis->AttachSystem(&sys);
     vis->SetWindowSize(800, 600);
@@ -141,24 +141,24 @@ int main(int argc, char* argv[]) {
     vis->AddSkyBox();
     vis->AddCamera(ChVector<>(0, 0.5, 0));
     vis->AddTypicalLights();
-*/
+
     int frame = 0;
 
-    // while (vis->Run()) {
-   while (true){
-        /*
+    while (vis->Run()) {
+//    while (true){
+        
         vis->BeginScene();
         vis->Render();
         vis->ShowInfoPanel(true);
         vis->EndScene();
-        */
+        
         sys.DoStepDynamics(step_size);
 
 
         if (frame % 100 == 0){
             char filename[300];
             sprintf(filename, "screenshot_%04d.png", int(frame/100));
-            // vis->WriteImageToFile(filename);
+            vis->WriteImageToFile(filename);
 
         }
 
