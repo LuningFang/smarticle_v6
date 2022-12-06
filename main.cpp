@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
     // theta, oritentation of the belly
     // alpha1 and alpha2
     // body id, make sure it's different for every body
-    Skeleton skeleton1(ChVector<double>(-0.02f, 0.0f, -0.006f), CH_C_PI_4, 3.f * CH_C_PI/2.0f, -CH_C_PI_2, 11);
+    Skeleton skeleton1(ChVector<double>(-0.02f, 0.0f, -0.006f), 0, -CH_C_PI_2, -CH_C_PI_2, 11);
 
     // 
     skeleton1.Initialize();
@@ -121,23 +121,9 @@ int main(int argc, char* argv[]) {
 
 
     // Test one skeleton first ... then writes API that sets phase shift
-    // Skeleton skeleton2(ChVector<double>(0.02, 0.0f, 0.06f), CH_C_PI, 3.f * CH_C_PI/2.0f, -CH_C_PI_2, 12);
-    // skeleton2.Initialize();
-    // skeleton2.AddSkeleton(sys);
-
-
-    // Skeleton skeleton2(ChVector<double>(0.05, 0.f, -0.06), 0, 3.f * CH_C_PI/2.0f, -CH_C_PI/2.0f, 11);
-    // Skeleton skeleton2(ChVector<double>(-0.0474, 0.f, -0.0069),  2.4399 - (EIGEN_PI), CH_C_PI_2, CH_C_PI_2, 10);
-    // Skeleton skeleton2(ChVector<double>(-0.02, 0.f, -0.03),  0, CH_C_PI, 0, 10);
-
-    // skeleton2.Initialize();
-    // skeleton2.AddSkeleton(sys);
-
-    // AddSkeleton(sys, ChVector<double>(0.05, 0.f, -0.06), 0, 3.f * CH_C_PI/2.0f, -CH_C_PI/2.0f, 11);
-
-    // ChVectorDynamic<double> initPose1(6);
-    // initPose1 << 0.0309, -3.6426e-4, 5.3186 - (EIGEN_PI), 1.5720, 1.57690;
-
+    Skeleton skeleton2(ChVector<double>(0.02, 0.0f, 0.06f), CH_C_PI, -CH_C_PI_2, -CH_C_PI_2, 12);
+    skeleton2.Initialize();
+    skeleton2.AddSkeleton(sys);
 
     // Create the Irrlicht visualization system
     ChIrrApp application(&sys, L"smarticle demo", core::dimension2d<u32>(800, 600));
@@ -163,27 +149,28 @@ int main(int argc, char* argv[]) {
         sys.DoStepDynamics(step_size);
 
 
-        // if (frame % 100 == 0){
-        //     char filename[300];
-        //     sprintf(filename, "screenshot_%04d.png", int(frame/100));
-        //     // write a screenshot to directory
+        if (frame % 50 == 0){
+            char filename[100];
+            sprintf(filename, "img_%04d.jpg", int(frame/100));
+            irr::video::IImage* image = application.GetVideoDriver()->createScreenShot();
+            application.GetVideoDriver()->writeImageToFile(image, filename);
+            image->drop();
 
-        // }
+        }
 
         if (frame % 20 == 0){
 
             application.BeginScene();
             application.DrawAll();
             application.EndScene();
+            
 
-            // std::cout << sys.GetChTime() << "," << skeleton1.GetPos().x() << ", " << skeleton1.GetPos().y() << ", " << skeleton1.GetPos().z() << ", " << skeleton1.GetAlpha1() << ", " << skeleton1.GetAlpha2() << ", " << skeleton2.GetPos().x() << ", " << skeleton2.GetPos().y() << ", "  << skeleton2.GetPos().z() << ", " << skeleton2.GetAlpha1() << ", " << skeleton2.GetAlpha2() << std::endl;
-
-            // std::cout << sys.GetChTime() << ","  << skeleton1.GetPos().x() << ", " << skeleton1.GetPos().y() << ", "  << skeleton1.GetPos().z() << ", " << skeleton1.GetAlpha1() << ", " << skeleton1.GetAlpha2() << ",";
+            std::cout << sys.GetChTime() << ","  << skeleton1.GetPos().x() << ", " << skeleton1.GetPos().y() << ", "  << skeleton1.GetPos().z() << ", " << skeleton1.GetAlpha1() << ", " << skeleton1.GetAlpha2() << ",";
 
 
             // std::cout  << skeleton2.GetPos().x() << ", " << skeleton2.GetPos().y() << ", "  << skeleton2.GetPos().z() << ", " << skeleton2.GetAlpha1() << ", " << skeleton2.GetAlpha2() << std::endl;
 
-            // std::cout << std::endl;
+            std::cout << std::endl;
 
 
         }

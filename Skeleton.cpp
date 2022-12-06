@@ -52,15 +52,15 @@ class ChFunction_RightMotor : public ChFunction {
 
     virtual double Get_y(double x) const override { 
 
-        int g = int((x + 0.2f)/0.4f) % 4;
+        int g = int(x/0.4f) % 4;
         double velo;
         switch (g) {
             case 0:
-                return -m_speed;
+                return m_speed;
             case 1:
                 return 0;
             case 2:
-                return m_speed;
+                return -m_speed;
             case 3:
                 return 0;
         }
@@ -212,7 +212,7 @@ class Skeleton{
             sys.AddBody(right_arm);
 
             sys.AddLink(left_motor);            
-            // sys.AddLink(right_motor);
+            sys.AddLink(right_motor);
 
         }
     
