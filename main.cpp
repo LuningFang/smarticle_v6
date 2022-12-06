@@ -38,7 +38,6 @@ using namespace chrono::irrlicht;
 using namespace irr;
 using namespace irr::core;
 
-collision::ChCollisionSystemType collision_type = collision::ChCollisionSystemType::BULLET;
 
 void AddContainerWall(std::shared_ptr<ChBody> body,
                       std::shared_ptr<ChMaterialSurface> mat,
@@ -59,7 +58,7 @@ void AddContainerWall(std::shared_ptr<ChBody> body,
 
 void AddContainer(ChSystemNSC& sys) {
     // The fixed body (5 walls)
-    auto fixedBody = chrono_types::make_shared<ChBody>(collision_type);
+    auto fixedBody = chrono_types::make_shared<ChBody>();
 
     fixedBody->SetMass(1.0);
     fixedBody->SetBodyFixed(true);
