@@ -22,6 +22,7 @@
 #include "chrono/core/ChRealtimeStep.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 #include "chrono/physics/ChSystemNSC.h"
+#include "chrono/physics/ChSystemSMC.h"
 #include "chrono/physics/ChBodyEasy.h"
 #include "chrono/physics/ChLinkMotorRotationAngle.h"
 #include "chrono_irrlicht/ChIrrApp.h"
@@ -38,6 +39,8 @@ using namespace chrono::irrlicht;
 using namespace irr;
 using namespace irr::core;
 
+
+#define USE_SMC
 
 void AddContainerWall(std::shared_ptr<ChBody> body,
                       std::shared_ptr<ChMaterialSurface> mat,
@@ -89,8 +92,26 @@ void AddContainer(ChSystemNSC& sys) {
 
 }
 
+#ifdef USE_SMC
+double time_step = 1e-4;
+int max_iteration_bilateral = 100;
+
+// contact force model
+ChSystemSMC::ContactForceModel contact_force_model = ChSystemSMC::ContactForceModel::Hertz;
+ChSystemSMC::TangentialDisplacementModel tangential_displ_mode = ChSystemSMC::TangentialDisplacementModel::MultiStep;
+
+#else
+double time_step = 1e-3;
+#endif
+
+
+
+
+
 int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
+    SetChronoDataPath(CHRONO_DATA_DIR);
+
     ChSystemNSC sys;
     AddContainer(sys);
 

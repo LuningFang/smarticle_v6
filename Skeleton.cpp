@@ -87,6 +87,9 @@ class Skeleton{
             m_left_angle = CH_C_PI - alpha1;
             m_right_angle = alpha2;
             no_contact_family_id = id;        
+
+            m_contact_method = ChContactMethod::NSC; // default nsc method
+
         };
 
         void Initialize(){
@@ -244,6 +247,7 @@ class Skeleton{
         std::shared_ptr<ChBodyEasyBox> right_arm;
         std::shared_ptr<ChLinkMotorRotationSpeed> left_motor;
         std::shared_ptr<ChLinkMotorRotationSpeed> right_motor;
+        ChContactMethod m_contact_method;
 
 };
 
