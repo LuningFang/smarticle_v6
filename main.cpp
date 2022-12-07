@@ -105,13 +105,11 @@ int main(int argc, char* argv[]) {
 
     bool useSMC;
     if (argc == 1){
-        std::cout << "use NSC contact. \n";
         useSMC = false;
     }
 
     if (argc == 2){
         useSMC = atoi(argv[1]);
-        std::cout << "useSMC = " << useSMC << std::endl;
     }
 
     if (argc > 2){
