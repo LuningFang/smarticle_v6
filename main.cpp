@@ -57,7 +57,7 @@ void AddContainerWall(std::shared_ptr<ChBody> body,
     }
 }
 
-void AddContainer(ChSystem& sys) {
+void AddContainer(ChSystem* sys) {
 
 // void AddContainer(ChSystemNSC& sys) {
     // The fixed body (5 walls)
@@ -70,7 +70,7 @@ void AddContainer(ChSystem& sys) {
 
     // Contact material for container
     // auto fixed_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
-    ChContactMethod contact_method = sys.GetContactMethod();
+    ChContactMethod contact_method = sys->GetContactMethod();
 
     auto fixed_mat = DefaultContactMaterial(contact_method);
 
@@ -93,7 +93,7 @@ void AddContainer(ChSystem& sys) {
     texture->SetTextureFilename(GetChronoDataFile("textures/concrete.jpg"));
     fixedBody->AddAsset(texture);
 
-    sys.AddBody(fixedBody);
+    sys->AddBody(fixedBody);
 
 }
 
@@ -103,23 +103,47 @@ int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
     SetChronoDataPath(CHRONO_DATA_DIR);
 
+    bool useSMC;
+    if (argc == 1){
+        std::cout << "use NSC contact. \n";
+        useSMC = false;
+    }
 
-    ChSystemNSC sys;
-    double step_size = 1e-3;
+    if (argc == 2){
+        useSMC = atoi(argv[1]);
+        std::cout << "useSMC = " << useSMC << std::endl;
+    }
 
+    if (argc > 2){
+        std::cout << "useage: ./main <0/1 - NSC/SMC> \n";
+        return 0;
+    }
 
-    // ChSystemSMC sys;
-    // double step_size = 1e-4;
+    ChSystem *sys;
+    double step_size;
+
+    if (useSMC == true){
+        ChSystemSMC *my_sys = new ChSystemSMC();
+        sys = my_sys;
+        step_size = 1e-4;
+    } else {
+        ChSystemNSC *my_sys = new ChSystemNSC();
+        sys = my_sys;
+        step_size = 1e-3;    
+    }
+
+    double time_end = 1;
+
 
     AddContainer(sys);
 
 
-    double output_frame_step = 0.01;
+    double output_frame_step = 0.01; // write image every 0.01 second
     
 
     // ChVector<float> gravity(0, 0, 9.81);
     ChVector<float> gravity(0, -9.81, 0);
-    sys.Set_G_acc(gravity);
+    sys->Set_G_acc(gravity);
     // double step_size = 1e-3; // 1e-3 in world.skel which one?
 
     // actuator (type: servo not velocity)
@@ -134,7 +158,7 @@ int main(int argc, char* argv[]) {
     // alpha1 and alpha2
     // body id, make sure it's different for every body
     Skeleton skeleton1(ChVector<double>(-0.02f, 0.0f, -0.006f), 0, -CH_C_PI_2, -CH_C_PI_2, 11);
-    skeleton1.SetContactMethod(sys.GetContactMethod());
+    skeleton1.SetContactMethod(sys->GetContactMethod());
     skeleton1.Initialize();
     
     // Add body skeleton 1 to sys
@@ -143,13 +167,13 @@ int main(int argc, char* argv[]) {
 
     // Test one skeleton first ... then writes API that sets phase shift
     Skeleton skeleton2(ChVector<double>(0.02, 0.0f, 0.06f), CH_C_PI, -CH_C_PI_2, -CH_C_PI_2, 12);
-    skeleton2.SetContactMethod(sys.GetContactMethod());
+    skeleton2.SetContactMethod(sys->GetContactMethod());
 
     skeleton2.Initialize();
     skeleton2.AddSkeleton(sys);
 
     // Create the Irrlicht visualization system
-    ChIrrApp application(&sys, L"smarticle demo", core::dimension2d<u32>(800, 600));
+    ChIrrApp application(sys, L"smarticle demo", core::dimension2d<u32>(800, 600));
     // Add camera, lights, logo and sky in Irrlicht scene
     application.AddTypicalLogo();
     application.AddTypicalSky();
@@ -169,7 +193,7 @@ int main(int argc, char* argv[]) {
     while (true){
         // visualization
         // compute dynamics
-        sys.DoStepDynamics(step_size);
+        sys->DoStepDynamics(step_size);
 
 
         if (frame % int(output_frame_step/step_size) == 0){
@@ -188,7 +212,7 @@ int main(int argc, char* argv[]) {
             application.EndScene();
             
 
-            std::cout << sys.GetChTime() << ","  << skeleton1.GetPos().x() << ", " << skeleton1.GetPos().y() << ", "  << skeleton1.GetPos().z() << ", " << skeleton1.GetAlpha1() << ", " << skeleton1.GetAlpha2() << ",";
+            std::cout << sys->GetChTime() << ","  << skeleton1.GetPos().x() << ", " << skeleton1.GetPos().y() << ", "  << skeleton1.GetPos().z() << ", " << skeleton1.GetAlpha1() << ", " << skeleton1.GetAlpha2() << ",";
 
 
             // std::cout  << skeleton2.GetPos().x() << ", " << skeleton2.GetPos().y() << ", "  << skeleton2.GetPos().z() << ", " << skeleton2.GetAlpha1() << ", " << skeleton2.GetAlpha2() << std::endl;
@@ -202,7 +226,7 @@ int main(int argc, char* argv[]) {
 
 
 
-        if (sys.GetChTime()>3){
+        if (sys->GetChTime()>time_end){
             break;
         }
 

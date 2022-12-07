@@ -237,13 +237,13 @@ class Skeleton{
 
         };
 
-        void AddSkeleton(ChSystem& sys){
-            sys.AddBody(left_arm);
-            sys.AddBody(center_body);
-            sys.AddBody(right_arm);
+        void AddSkeleton(ChSystem* sys){
+            sys->AddBody(left_arm);
+            sys->AddBody(center_body);
+            sys->AddBody(right_arm);
 
-            sys.AddLink(left_motor);            
-            sys.AddLink(right_motor);
+            sys->AddLink(left_motor);            
+            sys->AddLink(right_motor);
 
         }
     
