@@ -40,8 +40,6 @@ using namespace irr;
 using namespace irr::core;
 
 
-#define USE_SMC
-
 void AddContainerWall(std::shared_ptr<ChBody> body,
                       std::shared_ptr<ChMaterialSurface> mat,
                       const ChVector<>& size,
@@ -59,7 +57,9 @@ void AddContainerWall(std::shared_ptr<ChBody> body,
     }
 }
 
-void AddContainer(ChSystemNSC& sys) {
+void AddContainer(ChSystem& sys) {
+
+// void AddContainer(ChSystemNSC& sys) {
     // The fixed body (5 walls)
     auto fixedBody = chrono_types::make_shared<ChBody>();
 
@@ -69,7 +69,12 @@ void AddContainer(ChSystemNSC& sys) {
     fixedBody->SetCollide(true);
 
     // Contact material for container
-    auto fixed_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+    // auto fixed_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+    ChContactMethod contact_method = sys.GetContactMethod();
+
+    auto fixed_mat = DefaultContactMaterial(contact_method);
+
+
     fixedBody->GetCollisionModel()->ClearModel();
     // ground
     AddContainerWall(fixedBody, fixed_mat, ChVector<>(5.0, 0.02, 5.0), ChVector<>(0, -0.025, 0), false);
@@ -92,35 +97,30 @@ void AddContainer(ChSystemNSC& sys) {
 
 }
 
-#ifdef USE_SMC
-double time_step = 1e-4;
-int max_iteration_bilateral = 100;
-
-// contact force model
-ChSystemSMC::ContactForceModel contact_force_model = ChSystemSMC::ContactForceModel::Hertz;
-ChSystemSMC::TangentialDisplacementModel tangential_displ_mode = ChSystemSMC::TangentialDisplacementModel::MultiStep;
-
-#else
-double time_step = 1e-3;
-#endif
-
-
-
 
 
 int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
     SetChronoDataPath(CHRONO_DATA_DIR);
 
+
     ChSystemNSC sys;
+    double step_size = 1e-3;
+
+
+    // ChSystemSMC sys;
+    // double step_size = 1e-4;
+
     AddContainer(sys);
 
+
+    double output_frame_step = 0.01;
     
 
     // ChVector<float> gravity(0, 0, 9.81);
     ChVector<float> gravity(0, -9.81, 0);
     sys.Set_G_acc(gravity);
-    double step_size = 1e-3; // 1e-3 in world.skel which one?
+    // double step_size = 1e-3; // 1e-3 in world.skel which one?
 
     // actuator (type: servo not velocity)
     // force uppser limit (0, 3.0e-2)
@@ -134,15 +134,17 @@ int main(int argc, char* argv[]) {
     // alpha1 and alpha2
     // body id, make sure it's different for every body
     Skeleton skeleton1(ChVector<double>(-0.02f, 0.0f, -0.006f), 0, -CH_C_PI_2, -CH_C_PI_2, 11);
-
-    // 
+    skeleton1.SetContactMethod(sys.GetContactMethod());
     skeleton1.Initialize();
+    
     // Add body skeleton 1 to sys
     skeleton1.AddSkeleton(sys);
 
 
     // Test one skeleton first ... then writes API that sets phase shift
     Skeleton skeleton2(ChVector<double>(0.02, 0.0f, 0.06f), CH_C_PI, -CH_C_PI_2, -CH_C_PI_2, 12);
+    skeleton2.SetContactMethod(sys.GetContactMethod());
+
     skeleton2.Initialize();
     skeleton2.AddSkeleton(sys);
 
@@ -170,7 +172,7 @@ int main(int argc, char* argv[]) {
         sys.DoStepDynamics(step_size);
 
 
-        if (frame % 50 == 0){
+        if (frame % int(output_frame_step/step_size) == 0){
             char filename[100];
             sprintf(filename, "img_%04d.jpg", int(frame/100));
             irr::video::IImage* image = application.GetVideoDriver()->createScreenShot();
@@ -200,7 +202,7 @@ int main(int argc, char* argv[]) {
 
 
 
-        if (sys.GetChTime()>120){
+        if (sys.GetChTime()>3){
             break;
         }
 

@@ -1,4 +1,6 @@
 #include "chrono/physics/ChSystemNSC.h"
+#include "chrono/physics/ChSystemSMC.h"
+
 #include "chrono/physics/ChBodyEasy.h"
 #include "chrono/physics/ChLinkMotorRotationAngle.h"
 #include "chrono/physics/ChLinkMotorRotationSpeed.h"
@@ -8,6 +10,34 @@
 #include "chrono_thirdparty/filesystem/path.h"
 #include <cmath>
 using namespace chrono;
+
+std::shared_ptr<ChMaterialSurface> DefaultContactMaterial(ChContactMethod contact_method) {
+    float mu = 0.37f;   // coefficient of friction
+    float cr = 0.9f;   // coefficient of restitution
+    float Y = 2e7f;    // Young's modulus
+    float nu = 0.3f;   // Poisson ratio
+
+    switch (contact_method) {
+        case ChContactMethod::NSC: {
+            auto matNSC = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+            matNSC->SetFriction(mu);
+            matNSC->SetRestitution(cr); // Askah, would you want restitution during contact for lcp solver? 
+            return matNSC;
+        }
+        case ChContactMethod::SMC: {
+            auto matSMC = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+            matSMC->SetFriction(mu);
+            matSMC->SetRestitution(cr);
+            matSMC->SetYoungModulus(Y);
+            matSMC->SetPoissonRatio(nu);
+            return matSMC;
+        }
+        default:
+            return std::shared_ptr<ChMaterialSurface>();
+    }
+}
+
+
 
 // left motor function 
 class ChFunction_LeftMotor : public ChFunction {
@@ -88,7 +118,7 @@ class Skeleton{
             m_right_angle = alpha2;
             no_contact_family_id = id;        
 
-            m_contact_method = ChContactMethod::NSC; // default nsc method
+            m_contact_method = ChContactMethod::SMC; // default smc method
 
         };
 
@@ -99,9 +129,7 @@ class Skeleton{
             ChVector<double> arm_size(0.05, 0.023, 0.003);
             ChVector<double> belly_size(0.054, 0.027, 0.022);
 
-
-            auto link_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
-            link_mat->SetFriction(0.37);
+            auto link_mat = DefaultContactMaterial(m_contact_method);
 
             ChVector<double>  left_motor_pos(-belly_size.x()/2 * std::cos(m_belly_rotation), 0,  belly_size.x()/2 * std::sin(m_belly_rotation));
             ChVector<double> right_motor_pos( belly_size.x()/2 * std::cos(m_belly_rotation), 0, -belly_size.x()/2 * std::sin(m_belly_rotation));
@@ -209,7 +237,7 @@ class Skeleton{
 
         };
 
-        void AddSkeleton(ChSystemNSC& sys){
+        void AddSkeleton(ChSystem& sys){
             sys.AddBody(left_arm);
             sys.AddBody(center_body);
             sys.AddBody(right_arm);
@@ -219,6 +247,10 @@ class Skeleton{
 
         }
     
+        void SetContactMethod(ChContactMethod contact_method){
+            m_contact_method = contact_method;
+        }
+
         ChVector<double> GetPos(){
             return center_body->GetPos();
         };
