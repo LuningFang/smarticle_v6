@@ -266,6 +266,11 @@ class Skeleton{
         double GetAlpha2() {return right_motor->GetMotorRot();};
 
         // return theta
+        double GetTheta() {
+            // get the X column of orientation matrix A of center body
+            ChVector<double> x_axis = center_body->GetA().Get_A_Xaxis();
+            return std::acos(x_axis.x());
+        }
 
 
     private:

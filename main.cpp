@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
     ChSystem *sys;
     double step_size;
 
-    if (useSMC == true){
+    if (useSMC){
         ChSystemSMC *my_sys = new ChSystemSMC();
         sys = my_sys;
         step_size = 1e-4;
@@ -178,7 +178,7 @@ int main(int argc, char* argv[]) {
     application.AddTypicalLogo();
     application.AddTypicalSky();
     application.AddTypicalLights();
-    application.AddTypicalCamera(core::vector3df(0, 0.4, 0));
+    application.AddTypicalCamera(core::vector3df(0, 0.2, 0));
 
 
 
@@ -187,6 +187,11 @@ int main(int argc, char* argv[]) {
     application.AssetUpdateAll();
 
     int frame = 0;
+
+    // initialize the csv writer to write the output file
+    utils::CSV_writer txt(" ");
+    txt.stream().setf(std::ios::scientific | std::ios::showpos);
+    txt.stream().precision(8);
 
 
     // while (vis->Run()) {
@@ -212,13 +217,12 @@ int main(int argc, char* argv[]) {
             application.EndScene();
             
 
-            std::cout << sys->GetChTime() << ","  << skeleton1.GetPos().x() << ", " << skeleton1.GetPos().y() << ", "  << skeleton1.GetPos().z() << ", " << skeleton1.GetAlpha1() << ", " << skeleton1.GetAlpha2() << ",";
+            txt << sys->GetChTime() << skeleton1.GetPos().x() << skeleton1.GetPos().y() << skeleton1.GetPos().z() << skeleton1.GetTheta() << skeleton1.GetAlpha1() << skeleton1.GetAlpha2();
 
 
-            // std::cout  << skeleton2.GetPos().x() << ", " << skeleton2.GetPos().y() << ", "  << skeleton2.GetPos().z() << ", " << skeleton2.GetAlpha1() << ", " << skeleton2.GetAlpha2() << std::endl;
+            txt << skeleton2.GetPos().x() << skeleton2.GetPos().y() << skeleton2.GetPos().z() << skeleton2.GetTheta() << skeleton2.GetAlpha1() << skeleton2.GetAlpha2();
 
-            std::cout << std::endl;
-
+            txt << std::endl;
 
         }
 
@@ -227,10 +231,21 @@ int main(int argc, char* argv[]) {
 
 
         if (sys->GetChTime()>time_end){
+
             break;
         }
 
     }
+
+    std::string txt_output;
+    if (useSMC){
+        txt_output = "SMC_result.txt";
+    }
+    else {
+        txt_output = "NSC_result.txt";
+
+    }
+    txt.write_to_file(txt_output);
 
 
     return 0;
