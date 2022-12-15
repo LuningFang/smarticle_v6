@@ -269,7 +269,11 @@ class Skeleton{
         double GetTheta() {
             // get the X column of orientation matrix A of center body
             ChVector<double> x_axis = center_body->GetA().Get_A_Xaxis();
-            return std::acos(x_axis.x());
+            double theta = std::acos(x_axis.x());
+            if (x_axis.z() < 0){
+                theta = - theta;
+            }
+            return theta;
         }
 
 
